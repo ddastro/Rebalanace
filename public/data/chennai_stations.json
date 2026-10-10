@@ -1,0 +1,189 @@
+{
+  "_meta": {
+    "description": "Synthetic demonstration station data for the Chennai Spatial Risk Radar.",
+    "disclaimer": "ALL VALUES ARE SIMULATED. Not live operator data. Not derived from the UCI Bike Sharing dataset. Locations are real Chennai-area localities; station records are fictional demonstration data.",
+    "coordinate_source": "Approximate locality-centre coordinates from public geographic references. No exact street addresses implied.",
+    "inventory_equations": {
+      "served_pickups": "min(expected_pickups, current_inventory)",
+      "unserved_pickups": "expected_pickups - served_pickups",
+      "inventory_after_pickups": "current_inventory - served_pickups",
+      "available_docks": "capacity - inventory_after_pickups",
+      "served_returns": "min(expected_returns, available_docks)",
+      "unserved_returns": "expected_returns - served_returns",
+      "projected_inventory": "inventory_after_pickups + served_returns"
+    },
+    "risk_thresholds": {
+      "NORMAL": "projected_inventory >= 20% capacity AND projected_inventory <= 80% capacity AND unserved_pickups == 0 AND unserved_returns == 0",
+      "POTENTIAL_SHORTAGE": "projected_inventory > 0 AND projected_inventory < 20% capacity",
+      "SEVERE_SHORTAGE": "projected_inventory == 0 OR unserved_pickups > 0",
+      "POTENTIAL_DOCK_OVERFLOW": "projected_inventory > 80% capacity OR unserved_returns > 0"
+    }
+  },
+  "stations": [
+    {
+      "id": "CHN-01",
+      "locality": "Chennai Central",
+      "lat": 13.0827,
+      "lon": 80.2707,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 40,
+      "current_inventory": 12,
+      "expected_pickups": 18,
+      "expected_returns": 8
+    },
+    {
+      "id": "CHN-02",
+      "locality": "Anna Nagar",
+      "lat": 13.0850,
+      "lon": 80.2101,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 35,
+      "current_inventory": 28,
+      "expected_pickups": 10,
+      "expected_returns": 4
+    },
+    {
+      "id": "CHN-03",
+      "locality": "Ambattur OT",
+      "lat": 13.1143,
+      "lon": 80.1548,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 30,
+      "current_inventory": 24,
+      "expected_pickups": 7,
+      "expected_returns": 11
+    },
+    {
+      "id": "CHN-04",
+      "locality": "Avadi",
+      "lat": 13.1145,
+      "lon": 80.0983,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 25,
+      "current_inventory": 20,
+      "expected_pickups": 6,
+      "expected_returns": 3
+    },
+    {
+      "id": "CHN-05",
+      "locality": "Porur",
+      "lat": 13.0378,
+      "lon": 80.1571,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 30,
+      "current_inventory": 5,
+      "expected_pickups": 14,
+      "expected_returns": 3
+    },
+    {
+      "id": "CHN-06",
+      "locality": "Guindy",
+      "lat": 13.0067,
+      "lon": 80.2206,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 40,
+      "current_inventory": 8,
+      "expected_pickups": 20,
+      "expected_returns": 6
+    },
+    {
+      "id": "CHN-07",
+      "locality": "T. Nagar",
+      "lat": 13.0418,
+      "lon": 80.2341,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 45,
+      "current_inventory": 30,
+      "expected_pickups": 12,
+      "expected_returns": 14
+    },
+    {
+      "id": "CHN-08",
+      "locality": "Adyar",
+      "lat": 13.0063,
+      "lon": 80.2573,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 35,
+      "current_inventory": 3,
+      "expected_pickups": 16,
+      "expected_returns": 5
+    },
+    {
+      "id": "CHN-09",
+      "locality": "Velachery",
+      "lat": 12.9815,
+      "lon": 80.2180,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 40,
+      "current_inventory": 22,
+      "expected_pickups": 9,
+      "expected_returns": 13
+    },
+    {
+      "id": "CHN-10",
+      "locality": "Thiruvanmiyur",
+      "lat": 12.9830,
+      "lon": 80.2590,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 30,
+      "current_inventory": 26,
+      "expected_pickups": 5,
+      "expected_returns": 8
+    },
+    {
+      "id": "CHN-11",
+      "locality": "Perungudi",
+      "lat": 12.9625,
+      "lon": 80.2385,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 30,
+      "current_inventory": 14,
+      "expected_pickups": 8,
+      "expected_returns": 10
+    },
+    {
+      "id": "CHN-12",
+      "locality": "Sholinganallur",
+      "lat": 12.9010,
+      "lon": 80.2279,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 35,
+      "current_inventory": 29,
+      "expected_pickups": 6,
+      "expected_returns": 9
+    },
+    {
+      "id": "CHN-13",
+      "locality": "Siruseri SIPCOT",
+      "lat": 12.8407,
+      "lon": 80.2273,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 30,
+      "current_inventory": 18,
+      "expected_pickups": 5,
+      "expected_returns": 7
+    },
+    {
+      "id": "CHN-14",
+      "locality": "Tambaram",
+      "lat": 12.9249,
+      "lon": 80.1000,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 25,
+      "current_inventory": 10,
+      "expected_pickups": 8,
+      "expected_returns": 5
+    },
+    {
+      "id": "CHN-15",
+      "locality": "Madhavaram",
+      "lat": 13.1504,
+      "lon": 80.2311,
+      "coordinate_note": "approximate locality centre",
+      "capacity": 25,
+      "current_inventory": 19,
+      "expected_pickups": 4,
+      "expected_returns": 6
+    }
+  ]
+}

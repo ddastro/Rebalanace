@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RebalanceIQ — Sign In</title>
+<meta name="description" content="Sign in to RebalanceIQ — Bike-share demand forecasting dashboard." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ── Reset ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px;height:100%}
+
+body{
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  min-height:100vh;
+  display:flex;
+  background:#07080f;
+  color:#e2e8f0;
+  overflow:hidden;
+}
+
+/* ── Animated background ── */
+.bg-canvas{
+  position:fixed;inset:0;z-index:0;
+  background:radial-gradient(ellipse 80% 60% at 20% 50%, rgba(109,40,217,0.18) 0%, transparent 60%),
+             radial-gradient(ellipse 60% 80% at 80% 20%, rgba(6,182,212,0.12) 0%, transparent 55%),
+             radial-gradient(ellipse 50% 50% at 50% 100%, rgba(79,70,229,0.08) 0%, transparent 50%),
+             linear-gradient(135deg,#07080f 0%,#0d0e1a 50%,#080f1a 100%);
+  animation:bgPulse 8s ease-in-out infinite alternate;
+}
+
+@keyframes bgPulse{
+  from{opacity:1}
+  to{opacity:0.85}
+}
+
+/* Floating orbs */
+.orb{
+  position:fixed;border-radius:50%;filter:blur(80px);
+  animation:float 12s ease-in-out infinite alternate;
+  pointer-events:none;z-index:0;
+}
+.orb-1{width:400px;height:400px;background:rgba(109,40,217,0.12);top:-100px;left:-100px;animation-delay:0s}
+.orb-2{width:300px;height:300px;background:rgba(6,182,212,0.08);bottom:-80px;right:-60px;animation-delay:3s}
+.orb-3{width:200px;height:200px;background:rgba(79,70,229,0.1);top:40%;right:20%;animation-delay:6s}
+
+@keyframes float{
+  from{transform:translate(0,0) scale(1)}
+  to{transform:translate(30px,20px) scale(1.05)}
+}
+
+/* Grid pattern overlay */
+.grid-overlay{
+  position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(109,40,217,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(109,40,217,0.04) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+
+/* ── Layout ── */
+.login-layout{
+  position:relative;z-index:10;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  min-height:100vh;
+  width:100%;
+  animation:fadeIn 0.6s ease both;
+}
+
+@keyframes fadeIn{
+  from{opacity:0;transform:translateY(16px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* ── Left panel ── */
+.left-panel{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:4rem 4rem 4rem 5rem;
+  position:relative;
+  overflow:hidden;
+}
+
+.left-panel::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(109,40,217,0.1) 0%,rgba(6,182,212,0.04) 100%);
+  border-right:1px solid rgba(109,40,217,0.15);
+}
+
+.brand{
+  display:flex;align-items:center;gap:0.85rem;
+  margin-bottom:3.5rem;
+  position:relative;
+}
+
+.brand-mark{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,#6d28d9,#4f46e5);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.4rem;
+  box-shadow:0 0 24px rgba(109,40,217,0.45),0 0 60px rgba(109,40,217,0.2);
+  flex-shrink:0;
+}
+
+.brand-name{
+  font-family:'DM Mono',monospace;
+  font-size:1.35rem;
+  font-weight:500;
+  color:#e0e7ff;
+  letter-spacing:0.02em;
+}
+.brand-name span{color:rgba(167,139,250,0.7)}
+
+.left-headline{
+  font-size:2.8rem;
+  font-weight:700;
+  line-height:1.15;
+  color:#f1f5f9;
+  margin-bottom:1.25rem;
+  position:relative;
+}
+
+.left-headline em{
+  font-style:normal;
+  background:linear-gradient(135deg,#a78bfa,#38bdf8);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.left-sub{
+  font-size:0.9rem;
+  color:rgba(148,163,184,0.9);
+  line-height:1.7;
+  font-weight:300;
+  max-width:380px;
+  margin-bottom:3rem;
+  position:relative;
+}
+
+.features{
+  display:flex;flex-direction:column;gap:1rem;
+  position:relative;
+}
+
+.feature-item{
+  display:flex;align-items:flex-start;gap:0.9rem;
+}
+
+.feature-icon{
+  width:28px;height:28px;border-radius:8px;
+  background:rgba(109,40,217,0.15);
+  border:1px solid rgba(109,40,217,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.8rem;flex-shrink:0;
+  margin-top:0.1rem;
+}
+
+.feature-text strong{
+  display:block;font-size:0.87rem;font-weight:500;color:#e0e7ff;margin-bottom:0.15rem;
+}
+.feature-text span{
+  font-size:0.78rem;color:rgba(148,163,184,0.8);font-weight:300;line-height:1.5;
+}
+
+/* Floating stat pills */
+.stat-pills{
+  display:flex;gap:0.75rem;margin-top:3.5rem;flex-wrap:wrap;
+  position:relative;
+}
+
+.stat-pill{
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(109,40,217,0.2);
+  border-radius:20px;
+  padding:0.45rem 1rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.72rem;
+  color:rgba(167,139,250,0.9);
+}
+
+/* ── Right panel (login card) ── */
+.right-panel{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:3rem 4rem 3rem 3.5rem;
+  position:relative;
+}
+
+.login-card{
+  width:100%;
+  max-width:400px;
+  background:rgba(15,23,42,0.85);
+  border:1px solid rgba(109,40,217,0.2);
+  border-radius:20px;
+  padding:2.75rem 2.5rem;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(109,40,217,0.08),inset 0 1px 0 rgba(255,255,255,0.05);
+  backdrop-filter:blur(20px);
+  animation:cardIn 0.7s cubic-bezier(.22,.6,.36,1) both;
+}
+
+@keyframes cardIn{
+  from{opacity:0;transform:translateY(20px) scale(0.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.card-header{
+  margin-bottom:2rem;
+}
+
+.card-title{
+  font-size:1.45rem;
+  font-weight:600;
+  color:#f1f5f9;
+  margin-bottom:0.4rem;
+}
+
+.card-sub{
+  font-size:0.82rem;
+  color:rgba(148,163,184,0.75);
+  font-weight:300;
+}
+
+/* Form */
+.form-group{
+  margin-bottom:1.25rem;
+}
+
+.form-label{
+  display:block;
+  font-size:0.73rem;
+  font-family:'DM Mono',monospace;
+  letter-spacing:0.07em;
+  text-transform:uppercase;
+  color:rgba(148,163,184,0.8);
+  margin-bottom:0.5rem;
+}
+
+.input-wrap{
+  position:relative;
+}
+
+.form-input{
+  width:100%;
+  padding:0.75rem 1rem;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(109,40,217,0.2);
+  border-radius:10px;
+  color:#e2e8f0;
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-size:0.9rem;
+  outline:none;
+  transition:border-color 0.18s,box-shadow 0.18s,background 0.18s;
+}
+
+.form-input:focus{
+  border-color:rgba(109,40,217,0.6);
+  background:rgba(109,40,217,0.06);
+  box-shadow:0 0 0 3px rgba(109,40,217,0.12);
+}
+
+.form-input::placeholder{color:rgba(100,116,139,0.6)}
+
+.pw-toggle{
+  position:absolute;right:0.9rem;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:rgba(148,163,184,0.6);
+  cursor:pointer;font-size:0.95rem;padding:0.25rem;
+  transition:color 0.15s;
+}
+.pw-toggle:hover{color:#a78bfa}
+
+/* Error */
+.error-msg{
+  display:none;
+  background:rgba(239,68,68,0.1);
+  border:1px solid rgba(239,68,68,0.25);
+  border-radius:8px;
+  padding:0.65rem 0.85rem;
+  font-size:0.8rem;
+  color:#fca5a5;
+  margin-bottom:1.25rem;
+}
+.error-msg.show{display:block}
+
+/* Submit button */
+.submit-btn{
+  width:100%;
+  padding:0.85rem;
+  background:linear-gradient(135deg,#6d28d9,#4f46e5);
+  border:none;
+  border-radius:10px;
+  color:#fff;
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-size:0.95rem;
+  font-weight:600;
+  cursor:pointer;
+  letter-spacing:0.01em;
+  position:relative;
+  overflow:hidden;
+  transition:transform 0.15s,box-shadow 0.15s;
+  box-shadow:0 4px 16px rgba(109,40,217,0.35);
+  margin-top:0.5rem;
+}
+
+.submit-btn::before{
+  content:'';
+  position:absolute;inset:0;
+  background:linear-gradient(135deg,rgba(255,255,255,0.12),transparent);
+  opacity:0;transition:opacity 0.15s;
+}
+
+.submit-btn:hover{
+  transform:translateY(-1px);
+  box-shadow:0 6px 24px rgba(109,40,217,0.5);
+}
+.submit-btn:hover::before{opacity:1}
+.submit-btn:active{transform:translateY(0)}
+
+.submit-btn.loading{pointer-events:none;opacity:0.8}
+
+/* Divider */
+.divider{
+  display:flex;align-items:center;gap:0.75rem;
+  margin:1.5rem 0;
+}
+.divider-line{flex:1;height:1px;background:rgba(109,40,217,0.15)}
+.divider-text{font-size:0.7rem;color:rgba(100,116,139,0.6);font-family:'DM Mono',monospace}
+
+/* Hint */
+.cred-hint{
+  background:rgba(6,182,212,0.06);
+  border:1px solid rgba(6,182,212,0.15);
+  border-radius:8px;
+  padding:0.65rem 0.9rem;
+  font-size:0.75rem;
+  color:rgba(56,189,248,0.9);
+  font-family:'DM Mono',monospace;
+  line-height:1.6;
+}
+.cred-hint strong{display:block;margin-bottom:0.2rem;color:#38bdf8}
+
+/* Footer note */
+.card-footer-note{
+  margin-top:1.75rem;
+  text-align:center;
+  font-size:0.7rem;
+  color:rgba(100,116,139,0.5);
+  line-height:1.6;
+}
+
+/* ── Responsive ── */
+@media(max-width:860px){
+  .login-layout{grid-template-columns:1fr}
+  .left-panel{display:none}
+  .right-panel{padding:2rem 1.5rem}
+  .login-card{max-width:100%}
+  body{overflow:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-canvas"></div>
+<div class="grid-overlay"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="login-layout">
+
+  <!-- LEFT BRANDING -->
+  <div class="left-panel">
+    <div class="brand">
+      <div class="brand-mark">🚲</div>
+      <div class="brand-name">Rebalance<span>/IQ</span></div>
+    </div>
+
+    <h1 class="left-headline">
+      Know the demand.<br/>
+      <em>Before the riders do.</em>
+    </h1>
+
+    <p class="left-sub">
+      Upload your bike-share CSV and get instant hourly demand predictions
+      powered by a HistGradientBoosting model trained on 17,379 records —
+      40.9% more accurate than the naive baseline.
+    </p>
+
+    <div class="features">
+      <div class="feature-item">
+        <div class="feature-icon">⚡</div>
+        <div class="feature-text">
+          <strong>Instant predictions</strong>
+          <span>10,368-entry precomputed lookup — zero latency, no backend</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">🗺️</div>
+        <div class="feature-text">
+          <strong>Chennai Spatial Radar</strong>
+          <span>Station-level inventory simulation for 15 city localities</span>
+        </div>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">📡</div>
+        <div class="feature-text">
+          <strong>24h risk profiling</strong>
+          <span>Rush-hour demand + historical MAE combined into a risk score</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-pills">
+      <span class="stat-pill">MAE 43.76 rides/hr</span>
+      <span class="stat-pill">40.9% vs naive</span>
+      <span class="stat-pill">17,379 training rows</span>
+    </div>
+  </div>
+
+  <!-- RIGHT LOGIN FORM -->
+  <div class="right-panel">
+    <div class="login-card">
+
+      <div class="card-header">
+        <div class="card-title">Welcome back</div>
+        <div class="card-sub">Sign in to your RebalanceIQ dashboard</div>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)">
+
+        <div class="form-group">
+          <label class="form-label" for="username">Username</label>
+          <div class="input-wrap">
+            <input class="form-input" type="text" id="username"
+              placeholder="Enter your username" autocomplete="username" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrap">
+            <input class="form-input" type="password" id="password"
+              placeholder="Enter your password" autocomplete="current-password" />
+            <button type="button" class="pw-toggle" id="pw-toggle"
+              onclick="togglePw()" title="Show/hide password">👁</button>
+          </div>
+        </div>
+
+        <div class="error-msg" id="error-msg">
+          ⚠ Incorrect username or password. Please try again.
+        </div>
+
+        <button class="submit-btn" type="submit" id="submit-btn">
+          Sign In →
+        </button>
+      </form>
+
+      <div class="divider">
+        <div class="divider-line"></div>
+        <div class="divider-text">demo credentials</div>
+        <div class="divider-line"></div>
+      </div>
+
+      <div class="cred-hint">
+        <strong>Demo access</strong>
+        Username: <strong>admin</strong> &nbsp;·&nbsp; Password: <strong>citycycle2024</strong>
+      </div>
+
+      <div class="card-footer-note">
+        CityCycle Hackathon · Regression Track · Project 4<br/>
+        UCI Bike Sharing Dataset · Washington D.C.
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+  // If already logged in, skip to dashboard
+  if (sessionStorage.getItem('riq_auth')) {
+    window.location.replace('index.html');
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    const errEl = document.getElementById('error-msg');
+    const btn   = document.getElementById('submit-btn');
+
+    errEl.classList.remove('show');
+    btn.textContent = 'Signing in…';
+    btn.classList.add('loading');
+
+    // Tiny delay for UX feel
+    setTimeout(() => {
+      const ok = doLogin(user, pass);
+      if (!ok) {
+        errEl.classList.add('show');
+        btn.textContent = 'Sign In →';
+        btn.classList.remove('loading');
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+      }
+    }, 350);
+  }
+
+  function togglePw() {
+    const inp = document.getElementById('password');
+    const btn = document.getElementById('pw-toggle');
+    if (inp.type === 'password') {
+      inp.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      inp.type = 'password';
+      btn.textContent = '👁';
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RebalanceIQ – Bike-Share Demand Forecasting</title>
+  <meta name="description" content="RebalanceIQ forecasts hourly bike-share demand so operators rebalance docks before the imbalance hits. MAE 43.76 — 40.9% below naive baseline." />
+  <meta property="og:title" content="RebalanceIQ" />
+  <meta property="og:description" content="Know the demand before the riders do. Hourly bike-share demand forecasting for ops teams." />
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Leaflet CSS (no SRI — prevents CDN hash mismatch failures) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Leaflet JS -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js"></script>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ═══ SIDEBAR ═══════════════════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <!-- Logo + theme toggle -->
+    <div class="sb-header">
+      <div class="sb-logo" onclick="showTab('overview')">
+        <div class="sb-logo-mark">🚲</div>
+        <div class="sb-logo-text">Rebalance<span>/IQ</span></div>
+      </div>
+      <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark">
+        <span id="theme-icon">☀️</span>
+      </button>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sb-nav">
+      <div class="sb-nav-label">Navigation</div>
+      <a href="#" class="active" id="nav-overview" onclick="showTab('overview');return false;">
+        <span class="nav-icon">📊</span> Overview
+      </a>
+      <a href="#" id="nav-results" onclick="showTab('results');return false;">
+        <span class="nav-icon">📈</span> Results
+      </a>
+      <a href="#" id="nav-drivers" onclick="showTab('drivers');return false;">
+        <span class="nav-icon">🔍</span> Drivers
+      </a>
+      <a href="#" id="nav-whatif" onclick="showTab('whatif');return false;">
+        <span class="nav-icon">⚡</span> What-if
+      </a>
+      <a href="#" id="nav-radar" onclick="showTab('radar');return false;">
+        <span class="nav-icon">📡</span> Risk Radar
+      </a>
+      <a href="#" id="nav-spatial" onclick="showTab('spatial');return false;">
+        <span class="nav-icon">🗺️</span> Spatial Radar
+      </a>
+    </nav>
+
+    <!-- Key metrics -->
+    <div class="sb-kpis">
+      <div class="sb-kpi-label">Model · UCI Bike Sharing</div>
+      <div class="sb-kpi-grid">
+        <div class="sb-kpi">
+          <div class="sb-kpi-val" id="sb-mae" style="color:#fbbf24">—</div>
+          <div class="sb-kpi-name">MAE rides/hr</div>
+        </div>
+        <div class="sb-kpi">
+          <div class="sb-kpi-val" id="sb-rmse" style="color:#2dd4bf">—</div>
+          <div class="sb-kpi-name">RMSE rides/hr</div>
+        </div>
+        <div class="sb-kpi">
+          <div class="sb-kpi-val" id="sb-improve" style="color:#34d399">—</div>
+          <div class="sb-kpi-name">vs. baseline</div>
+        </div>
+        <div class="sb-kpi">
+          <div class="sb-kpi-val" style="color:#c084fc">17,379</div>
+          <div class="sb-kpi-name">training rows</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload zone -->
+    <div class="sb-upload">
+      <div class="sb-upload-label">Upload Dataset</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="csv-upload" accept=".csv" onchange="handleFileUpload(this.files[0])" />
+        <div class="upload-icon">📂</div>
+        <div class="upload-hint">
+          <strong>Drop hour.csv here</strong>
+          or click to browse · Requires dteday, hr, cnt columns
+        </div>
+      </div>
+      <div class="upload-status" id="upload-status"></div>
+    </div>
+
+    <!-- Groq AI key (localStorage only, never in code) -->
+    <div class="sb-section" style="padding:0.85rem 1rem 0.75rem;border-top:1px solid var(--sb-border)">
+      <div style="font-size:0.65rem;font-family:var(--mono);letter-spacing:0.07em;text-transform:uppercase;color:var(--sb-fg-muted);margin-bottom:0.45rem">
+        🤖 Groq API Key
+      </div>
+      <div style="position:relative">
+        <input type="password" id="groq-key-input" placeholder="gsk_…"
+          style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(124,63,237,0.2);
+                 border-radius:6px;padding:0.45rem 2rem 0.45rem 0.6rem;color:#c4b5fd;
+                 font-family:var(--mono);font-size:0.7rem;outline:none;box-sizing:border-box"
+          oninput="saveGroqKey(this.value)" />
+        <span id="groq-key-ok" style="position:absolute;right:0.5rem;top:50%;transform:translateY(-50%);
+              font-size:0.75rem;display:none">✅</span>
+      </div>
+      <div style="font-size:0.62rem;color:var(--sb-fg-muted);margin-top:0.35rem;line-height:1.5">
+        Saved in browser only.<br/>
+        Free key: <a href="https://console.groq.com" target="_blank"
+          style="color:#a78bfa;text-decoration:none">console.groq.com</a>
+      </div>
+    </div>
+
+    <!-- Sidebar footer -->
+    <div class="sb-footer">
+      UCI Bike Sharing · Washington D.C.<br/>
+      2011–2012 · HistGradientBoosting
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN PANEL ════════════════════════════════════════════ -->
+  <div class="main-panel">
+
+    <!-- Hero -->
+    <section class="hero" id="hero-section">
+      <div class="hero-inner">
+        <div>
+          <div class="hero-headline">
+            <em id="stat-mae">43.76</em> rides
+          </div>
+          <p class="hero-sub">
+            mean absolute error — <span id="stat-improve">40.9%</span> below the naive
+            same-hour-last-week baseline. HistGradientBoosting trained on 17,379
+            hourly records from Washington D.C., 2011–2012.
+          </p>
+        </div>
+        <div class="hero-metrics">
+          <div class="hero-metric">
+            <div class="hm-value" id="stat-rmse">66.94</div>
+            <div class="hm-label">RMSE · rides/hr</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hm-value teal">17,379</div>
+            <div class="hm-label">training rows</div>
+          </div>
+          <div class="hero-metric">
+            <div class="hm-value white">2</div>
+            <div class="hm-label">years · 2011–2012</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Upload active banner -->
+    <div class="upload-banner" id="upload-banner">
+      <span>📂</span>
+      <span><strong id="upload-banner-name">—</strong> uploaded —
+        <span id="upload-banner-rows">—</span> rows ·
+        <span id="upload-banner-range">—</span>
+      </span>
+      <button class="compare-toggle-btn" onclick="clearUpload()" style="margin-left:auto">✕ Remove upload</button>
+    </div>
+
+    <!-- Tab strip -->
+    <div class="tabs-wrapper">
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-overview" onclick="showTab('overview')">Overview</button>
+        <button class="tab-btn" id="tab-results"  onclick="showTab('results')">Results</button>
+        <button class="tab-btn" id="tab-drivers"  onclick="showTab('drivers')">Drivers</button>
+        <button class="tab-btn" id="tab-whatif"   onclick="showTab('whatif')">What-if</button>
+        <button class="tab-btn" id="tab-radar"    onclick="showTab('radar')">Risk Radar</button>
+        <button class="tab-btn" id="tab-spatial"  onclick="showTab('spatial')">Spatial Radar</button>
+      </div>
+    </div>
+
+    <!-- ═══ TAB CONTENT ═════════════════════════════════════════ -->
+    <main>
+
+      <!-- ── OVERVIEW ──────────────────────────────────────── -->
+      <section class="tab-section active" id="section-overview">
+        <div class="section-header">
+          <h2>Project Overview</h2>
+          <p>End-to-end demand forecasting for bike-share rebalancing · CityCycle Hackathon · Regression track</p>
+        </div>
+
+        <div class="overview-grid">
+          <div>
+            <div class="card">
+              <div class="card-title">The problem</div>
+              <p style="font-size:0.86rem;line-height:1.7;font-weight:300">
+                A bike-share operator arrives at 8 AM to find empty docks — and at 6 PM, full ones.
+                Both are rebalancing failures. Dispatching trucks reactively costs time and money.
+                Forecasting demand one hour ahead lets ops teams pre-position bikes
+                before the imbalance hits, not after.
+              </p>
+            </div>
+            <div class="card">
+              <div class="card-title">What we built</div>
+              <ul class="approach-list">
+                <li>
+                  <span class="step-num">→</span>
+                  <div><strong style="font-weight:500">UCI Bike Sharing Dataset</strong> · 17,379 hourly records from Washington D.C., January 2011 – December 2012.</div>
+                </li>
+                <li>
+                  <span class="step-num">→</span>
+                  <div><strong style="font-weight:500">Chronological train/test split</strong> · First 18 months for training, last 6 months held out. No random shuffle.</div>
+                </li>
+                <li>
+                  <span class="step-num">→</span>
+                  <div><strong style="font-weight:500">Three models compared</strong> · Same-hour-last-week naive baseline, Ridge regression, HistGradientBoosting with cyclical sin/cos encoding.</div>
+                </li>
+                <li>
+                  <span class="step-num">→</span>
+                  <div><strong style="font-weight:500">Permutation-based explainability</strong> · Top demand drivers with plain-language operational guidance.</div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <div class="card key-result" style="margin-bottom:1rem">
+              <div class="card-title">Key result</div>
+              <div class="improvement-value" id="overview-improve">40.9%</div>
+              <div class="improvement-label">MAE reduction vs. naive baseline</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-top:1rem">
+                <div class="metric-card best" style="padding:0.85rem 1rem">
+                  <div class="metric-card-label">MAE</div>
+                  <div class="metric-card-val" id="ov-mae" style="font-size:1.5rem">—</div>
+                  <div class="metric-card-sub">rides / hr</div>
+                </div>
+                <div class="metric-card" style="border-top-color:var(--teal);padding:0.85rem 1rem">
+                  <div class="metric-card-label">RMSE</div>
+                  <div class="metric-card-val" id="ov-rmse" style="font-size:1.5rem;color:var(--teal)">—</div>
+                  <div class="metric-card-sub">rides / hr</div>
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Dataset</div>
+              <div style="font-size:0.83rem">
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--fg-muted);font-weight:300">Source</span><span style="font-family:var(--mono);font-size:0.78rem">UCI ML Repository</span></div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--fg-muted);font-weight:300">Rows</span><span style="font-family:var(--mono);font-size:0.78rem">17,379 hourly</span></div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--fg-muted);font-weight:300">Period</span><span style="font-family:var(--mono);font-size:0.78rem">Jan 2011 – Dec 2012</span></div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid var(--border)"><span style="color:var(--fg-muted);font-weight:300">Target</span><span style="font-family:var(--mono);font-size:0.78rem;color:var(--amber)">cnt</span></div>
+                <div style="display:flex;justify-content:space-between;padding:0.5rem 0"><span style="color:var(--fg-muted);font-weight:300">City</span><span style="font-family:var(--mono);font-size:0.78rem">Washington, D.C.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Uploaded data summary (shown when data is uploaded) -->
+        <div class="card" id="upload-summary-card" style="display:none">
+          <div class="card-title" style="color:var(--indigo)">📂 Uploaded dataset — model predictions vs actual</div>
+          <div id="upload-summary-body"></div>
+          <div id="upload-pred-charts" style="display:none">
+            <div style="margin-top:1rem">
+              <div class="card-title" style="margin-bottom:0.5rem">Actual vs Predicted — uploaded data (first 168 rows)</div>
+              <div class="chart-wrap" style="height:240px"><canvas id="uploadPredChart"></canvas></div>
+            </div>
+            <div style="margin-top:1rem">
+              <div class="card-title" style="margin-bottom:0.5rem">Hourly demand pattern — uploaded data</div>
+              <div class="chart-wrap" style="height:200px"><canvas id="uploadHourlyChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Insights card (shown after upload + Groq analysis) -->
+        <div class="card" id="ai-insights-card" style="display:none">
+          <div class="card-title" style="display:flex;align-items:center;gap:0.6rem">
+            <span style="font-size:1rem">🤖</span>
+            <span>AI Analysis</span>
+            <span style="font-family:var(--mono);font-size:0.65rem;color:var(--fg-muted);margin-left:auto">powered by Groq · llama-3.1-8b-instant</span>
+          </div>
+          <div id="ai-insights-body">
+            <div class="ai-loading">
+              <div class="ai-spinner"></div>
+              <span>Analysing your dataset…</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── RESULTS ────────────────────────────────────────── -->
+      <section class="tab-section" id="section-results">
+        <div class="section-header">
+          <h2>Model Results</h2>
+          <p>Three models evaluated on the held-out test set (last 6 months). Ridge underperforms the naive baseline — that result is kept, not hidden.</p>
+        </div>
+
+        <div class="grid-3" id="metric-cards" style="margin-bottom:1rem">
+          <div class="loading"><div class="spinner"></div>Loading…</div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Full comparison</div>
+          <div class="table-wrap">
+            <table id="metrics-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>MAE (rides/hr)</th>
+                  <th>RMSE (rides/hr)</th>
+                  <th>Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="color:var(--fg-muted);text-align:center;padding:2rem;font-size:0.82rem">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Forecast vs actual — sample week</div>
+          <div class="chart-wrap" style="height:300px">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Mean absolute error by hour of day</div>
+          <div class="info-box">
+            <span class="icon">⚑</span>
+            <span>Rush hours (7–9 AM, 5–7 PM) carry the highest forecast error. The line marks a heuristic 20% safety buffer above historical MAE — not a calibrated confidence interval.</span>
+          </div>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="errorHourChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── DRIVERS ────────────────────────────────────────── -->
+      <section class="tab-section" id="section-drivers">
+        <div class="section-header">
+          <h2>Demand Drivers</h2>
+          <p>Permutation importance identifies which features the model relies on most.</p>
+        </div>
+
+        <div class="card shap-img-wrap" style="margin-bottom:1rem">
+          <div class="card-title">Permutation importance summary</div>
+          <img id="shap-img" src="data/shap_summary.png" alt="Permutation Importance"
+               onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:var(--fg-muted);font-size:0.82rem\'>Run the notebook to generate shap_summary.png</div>'" />
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Feature group importance</div>
+          <div id="grouped-importance-container"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+
+        <div id="drivers-container">
+          <div class="loading"><div class="spinner"></div>Loading drivers…</div>
+        </div>
+      </section>
+
+      <!-- ── WHAT-IF ─────────────────────────────────────────── -->
+      <section class="tab-section" id="section-whatif">
+        <div class="section-header">
+          <h2>What-if Simulator</h2>
+          <p>Instant demand estimates from a precomputed 10,368-entry lookup — zero latency, no backend.</p>
+        </div>
+
+        <div class="info-box">
+          <span class="icon">⚡</span>
+          <span>All predictions come from the precomputed model lookup. Toggle Scenario B to compare two conditions side-by-side. Differences are correlational, not causal.</span>
+        </div>
+
+        <div class="scenarios-bar">
+          <span class="scenario-label scenario-a-label">Scenario A</span>
+          <button class="compare-toggle-btn" id="compare-toggle" onclick="toggleScenarioB()">+ Compare Scenario B</button>
+        </div>
+
+        <div class="whatif-layout" style="margin-bottom:1rem">
+          <!-- Controls A -->
+          <div class="card controls-card" id="controls-a" style="border-radius:0">
+            <div class="card-title">Conditions — Scenario A</div>
+            <div class="form-group">
+              <div class="form-label">Hour <span class="form-label-val" id="lbl-hr">8:00 AM</span></div>
+              <input type="range" id="ctrl-hr" min="0" max="23" value="8" step="1" oninput="updateHourLabel(this.value);updateDemand()" />
+            </div>
+            <div class="form-group">
+              <div class="form-label">Day type</div>
+              <div class="toggle-group">
+                <button class="toggle-btn active" id="btn-wd-1" onclick="setWorkingDay(1)">Working day</button>
+                <button class="toggle-btn" id="btn-wd-0" onclick="setWorkingDay(0)">Weekend</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Weather</div>
+              <select id="ctrl-weather" onchange="updateDemand()">
+                <option value="1">Clear / partly cloudy</option>
+                <option value="2">Mist / cloudy</option>
+                <option value="3">Light rain / snow</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="form-label">Temperature <span class="form-label-val" id="lbl-temp">—</span></div>
+              <input type="range" id="ctrl-temp" min="0" max="7" value="4" step="1" oninput="updateTempLabel(this.value);updateDemand()" />
+            </div>
+            <div class="form-group">
+              <div class="form-label">Humidity <span class="form-label-val" id="lbl-hum">—</span></div>
+              <input type="range" id="ctrl-hum" min="0" max="2" value="1" step="1" oninput="updateHumLabel(this.value);updateDemand()" />
+            </div>
+            <div class="form-group">
+              <div class="form-label">Wind speed <span class="form-label-val" id="lbl-wind">—</span></div>
+              <input type="range" id="ctrl-wind" min="0" max="2" value="0" step="1" oninput="updateWindLabel(this.value);updateDemand()" />
+            </div>
+          </div>
+
+          <!-- Result A -->
+          <div id="result-a-col" style="display:flex;flex-direction:column">
+            <div class="demand-result" style="border-bottom:1px solid var(--border);flex:1">
+              <div class="card-title">Scenario A — predicted demand</div>
+              <div class="demand-gauge">
+                <div class="demand-val" id="demand-val">—</div>
+                <div class="demand-unit">rides / hr</div>
+              </div>
+              <div class="demand-level" id="demand-level">—</div>
+              <div style="color:var(--fg-muted);font-size:0.82rem;font-weight:300;margin-top:0.25rem" id="demand-desc">Set conditions above</div>
+              <div class="demand-action" id="demand-action"><strong>Recommended action</strong>Adjust conditions to see action.</div>
+            </div>
+
+            <div style="padding:1.25rem;border-bottom:1px solid var(--border)" id="pred-explain-card">
+              <div class="card-title">Why this estimate?</div>
+              <div id="pred-explain-body" style="font-size:0.82rem;color:var(--fg-muted);font-weight:300">Set conditions above.</div>
+            </div>
+
+            <div style="padding:1.25rem">
+              <div class="card-title">Full day demand profile — Scenario A</div>
+              <div class="chart-wrap" style="height:240px">
+                <canvas id="dayProfileChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scenario B -->
+        <div id="scenario-b-section" style="display:none">
+          <div class="scenario-b-divider">Scenario B</div>
+          <div class="whatif-layout" style="border-color:rgba(13,148,136,0.25);margin-bottom:1rem">
+            <div class="card controls-card" style="border-radius:0;border-color:rgba(13,148,136,0.15)">
+              <div class="card-title" style="color:var(--teal)">Conditions — Scenario B</div>
+              <div class="form-group">
+                <div class="form-label">Hour <span class="form-label-val" style="color:var(--teal)" id="lbl-hr-b">5:00 PM</span></div>
+                <input type="range" id="ctrl-hr-b" min="0" max="23" value="17" step="1" oninput="updateHourLabelB(this.value);updateScenarioB()" />
+              </div>
+              <div class="form-group">
+                <div class="form-label">Day type</div>
+                <div class="toggle-group">
+                  <button class="toggle-btn" id="btn-wd-1-b" onclick="setWorkingDayB(1)">Working day</button>
+                  <button class="toggle-btn active" id="btn-wd-0-b" onclick="setWorkingDayB(0)">Weekend</button>
+                </div>
+              </div>
+              <div class="form-group">
+                <div class="form-label">Weather</div>
+                <select id="ctrl-weather-b" onchange="updateScenarioB()">
+                  <option value="1">Clear / partly cloudy</option>
+                  <option value="2">Mist / cloudy</option>
+                  <option value="3">Light rain / snow</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <div class="form-label">Temperature <span class="form-label-val" style="color:var(--teal)" id="lbl-temp-b">—</span></div>
+                <input type="range" id="ctrl-temp-b" min="0" max="7" value="4" step="1" oninput="updateTempLabelB(this.value);updateScenarioB()" />
+              </div>
+              <div class="form-group">
+                <div class="form-label">Humidity <span class="form-label-val" style="color:var(--teal)" id="lbl-hum-b">—</span></div>
+                <input type="range" id="ctrl-hum-b" min="0" max="2" value="1" step="1" oninput="updateHumLabelB(this.value);updateScenarioB()" />
+              </div>
+              <div class="form-group">
+                <div class="form-label">Wind speed <span class="form-label-val" style="color:var(--teal)" id="lbl-wind-b">—</span></div>
+                <input type="range" id="ctrl-wind-b" min="0" max="2" value="0" step="1" oninput="updateWindLabelB(this.value);updateScenarioB()" />
+              </div>
+            </div>
+            <div>
+              <div class="demand-result" style="border-bottom:1px solid rgba(13,148,136,0.15)">
+                <div class="card-title" style="color:var(--teal)">Scenario B — predicted demand</div>
+                <div class="demand-gauge">
+                  <div class="demand-val" id="demand-val-b" style="color:var(--teal)">—</div>
+                  <div class="demand-unit">rides / hr</div>
+                </div>
+                <div class="demand-level" id="demand-level-b">—</div>
+                <div style="color:var(--fg-muted);font-size:0.82rem;font-weight:300;margin-top:0.25rem" id="demand-desc-b">—</div>
+              </div>
+              <div style="padding:1.25rem" id="comparison-panel">
+                <div class="card-title">Scenario comparison</div>
+                <div id="comparison-body"><div style="color:var(--fg-muted);font-size:0.83rem">Set both scenarios to compare.</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── RISK RADAR ──────────────────────────────────────── -->
+      <section class="tab-section" id="section-radar">
+        <div class="section-header">
+          <h2>Risk Radar</h2>
+          <p>Identify which hours warrant operational attention — combining predicted demand with historical forecast error.</p>
+        </div>
+
+        <div class="info-box">
+          <span class="icon">⚑</span>
+          <span>Citywide demand-risk indicator (UCI dataset). Risk = 0.6 × demand_score + 0.4 × error_score. Thresholds: Low &lt; 0.33 · Medium 0.33–0.66 · High &gt; 0.66. Heuristic — not a calibrated measure.</span>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Conditions</div>
+          <div style="display:flex;gap:1.5rem;align-items:flex-end;flex-wrap:wrap">
+            <div>
+              <div class="form-label" style="margin-bottom:0.4rem">Day type</div>
+              <div class="toggle-group" style="width:240px">
+                <button class="toggle-btn active" id="radar-wd-1" onclick="setRadarDayType(1)">Working day</button>
+                <button class="toggle-btn" id="radar-wd-0" onclick="setRadarDayType(0)">Weekend</button>
+              </div>
+            </div>
+            <div>
+              <div class="form-label" style="margin-bottom:0.4rem">Typical weather</div>
+              <select id="radar-weather" onchange="renderRadar()" style="min-width:210px">
+                <option value="1">Clear / partly cloudy</option>
+                <option value="2">Mist / cloudy</option>
+                <option value="3">Light rain / snow</option>
+              </select>
+            </div>
+            <div>
+              <div class="form-label" style="margin-bottom:0.4rem">Temperature</div>
+              <select id="radar-temp" onchange="renderRadar()" style="min-width:190px">
+                <option value="2">10–16°C (cool)</option>
+                <option value="4" selected>21–26°C (mild)</option>
+                <option value="6">32–37°C (hot)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">24-hour risk profile</div>
+          <div class="chart-wrap-tall">
+            <canvas id="radarProfileChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Hour-by-hour attention planner</div>
+          <div class="table-wrap">
+            <table id="radar-table">
+              <thead>
+                <tr>
+                  <th>Hour</th>
+                  <th>Predicted demand</th>
+                  <th>Hist. MAE</th>
+                  <th>Risk score</th>
+                  <th>Level</th>
+                  <th>Suggested action</th>
+                </tr>
+              </thead>
+              <tbody id="radar-tbody">
+                <tr><td colspan="6" style="text-align:center;color:var(--fg-muted);padding:2rem;font-size:0.82rem">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── SPATIAL RADAR ───────────────────────────────────── -->
+      <section class="tab-section" id="section-spatial">
+        <div class="section-header">
+          <h2>Chennai Spatial Risk Radar</h2>
+          <p>Synthetic station-level inventory simulation for 15 Chennai-area localities · Not live operator data</p>
+        </div>
+
+        <div class="spatial-disclaimer">
+          <span class="icon">⚠</span>
+          <div>
+            <strong>CHENNAI DEMONSTRATION MAP</strong> — STATION INVENTORY AND DEMAND VALUES ARE SIMULATED, NOT LIVE OPERATOR DATA.
+            Locations are real Chennai-area localities. Station records are fictional demonstration data.
+            UCI-based citywide estimates and synthetic station data are labelled separately.
+            Coordinates are approximate locality centres — no exact street addresses implied.
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div id="spatial-summary-cards" class="spatial-summary-grid">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+
+        <!-- Scenario controls -->
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Simulation scenario</div>
+          <div style="display:flex;gap:2rem;flex-wrap:wrap;align-items:flex-end">
+            <div style="flex:1;min-width:200px">
+              <div class="form-label">Pickup demand multiplier <span class="form-label-val" id="lbl-pickup-mult">1.0×</span></div>
+              <input type="range" id="ctrl-pickup-mult" min="0.5" max="2.0" value="1.0" step="0.1" oninput="updatePickupMult(this.value)" style="margin-top:0.4rem" />
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div class="form-label">Return demand multiplier <span class="form-label-val" id="lbl-return-mult">1.0×</span></div>
+              <input type="range" id="ctrl-return-mult" min="0.5" max="2.0" value="1.0" step="0.1" oninput="updateReturnMult(this.value)" style="margin-top:0.4rem" />
+            </div>
+            <button class="compare-toggle-btn" onclick="resetSpatialScenario()">Reset to defaults</button>
+          </div>
+          <div style="margin-top:0.6rem;font-size:0.76rem;color:var(--fg-muted);font-weight:300">Multipliers scale base synthetic demand. All calculations respect capacity and non-negativity constraints.</div>
+        </div>
+
+        <!-- Map -->
+        <div class="card" style="padding:0;overflow:hidden;margin-bottom:1rem">
+          <div class="card-title" style="padding:1rem 1.5rem 0.75rem">Interactive map — synthetic station locations</div>
+          <div id="chennai-map" style="height:460px;width:100%;background:var(--surface-2)">
+            <div class="loading" style="padding-top:5rem">
+              <div class="spinner"></div>
+              Loading map… If tiles unavailable, use station table below.
+            </div>
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><span class="legend-dot" style="background:#059669"></span> Normal inventory</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#d97706"></span> Potential shortage / overflow</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#dc2626"></span> Severe shortage</div>
+          </div>
+        </div>
+
+        <!-- Station detail panel -->
+        <div id="station-panel" class="card" style="display:none;margin-bottom:1rem">
+          <div class="card-title" id="panel-title">Station detail</div>
+          <div id="panel-body"></div>
+        </div>
+
+        <!-- Redistribution -->
+        <div class="card" style="margin-bottom:1rem">
+          <div class="card-title">Simulated redistribution recommendations</div>
+          <div class="spatial-disclaimer" style="margin-bottom:1rem">
+            <span class="icon">⚑</span>
+            <div>SIMULATED REDISTRIBUTION RECOMMENDATION — NOT A LIVE DISPATCH ORDER. Greedy heuristic: donors &gt; 50% capacity → recipients &lt; 30% capacity. Transfers preserve source ≥ 30%, respect destination dock space, conserve total inventory.</div>
+          </div>
+          <div id="redistribution-body"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+
+        <!-- Station table -->
+        <div class="card">
+          <div class="card-title">Station table — synthetic station simulation</div>
+          <div class="table-wrap">
+            <table id="station-table">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Locality</th><th>Cap.</th><th>Current</th>
+                  <th>Exp. Pick.</th><th>Exp. Ret.</th>
+                  <th>Served Pick.</th><th>Unserved Pick.</th>
+                  <th>Served Ret.</th><th>Unserved Ret.</th>
+                  <th>Projected</th><th>Risk</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="station-tbody">
+                <tr><td colspan="13" style="text-align:center;color:var(--fg-muted);padding:2rem;font-size:0.82rem">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main><!-- /main -->
+
+    <!-- ── FOOTER ──────────────────────────────────────────── -->
+    <footer>
+      <div class="footer-title">Ethics &amp; Limitations</div>
+      <div class="ethics-grid">
+        <div class="ethics-item">
+          <h4>Unpredictable events</h4>
+          <p>Storms, transit strikes, concerts, and emergencies are outside the model's training distribution. Always maintain a manual override protocol.</p>
+        </div>
+        <div class="ethics-item">
+          <h4>Data freshness</h4>
+          <p>Training data is from 2011–2012. Remote work adoption, new infrastructure, and population shifts may have changed demand patterns. Retrain annually.</p>
+        </div>
+        <div class="ethics-item">
+          <h4>Uncertainty</h4>
+          <p>All predictions are estimates based on historical patterns. Safety buffers are heuristics — not confidence intervals. Rush hours carry the highest historical error.</p>
+        </div>
+        <div class="ethics-item">
+          <h4>Equity</h4>
+          <p>The model uses aggregate citywide counts without demographic weighting. Ensure rebalancing decisions do not systematically under-serve lower-income areas.</p>
+        </div>
+      </div>
+      <div class="footer-copy">
+        <span>RebalanceIQ · CityCycle Hackathon · Project 4 — Regression</span>
+        <span>UCI Bike Sharing Dataset · Washington D.C. · 2011–2012</span>
+      </div>
+    </footer>
+
+  </div><!-- /main-panel -->
+</div><!-- /app-layout -->
+
+<script src="js/app.js"></script>
+<script src="js/spatial.js"></script>
+<script src="js/upload.js"></script>
+</body>
+</html>

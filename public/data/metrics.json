@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "name": "Naive (same-hour last week)",
+      "mae": 74.04,
+      "rmse": 130.44
+    },
+    {
+      "name": "Ridge Regression",
+      "mae": 109.9,
+      "rmse": 143.46
+    },
+    {
+      "name": "GradientBoosting (Main)",
+      "mae": 43.76,
+      "rmse": 66.94
+    }
+  ],
+  "best_model": "GradientBoosting",
+  "improvement_vs_naive_mae_pct": 40.9,
+  "improvement_vs_naive_rmse_pct": 48.7
+}

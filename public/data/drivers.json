@@ -1,0 +1,59 @@
+{
+  "top_features": [
+    {
+      "feature": "hr",
+      "label": "Hour of Day",
+      "importance": 0.4744
+    },
+    {
+      "feature": "workingday",
+      "label": "Working Day",
+      "importance": 0.2647
+    },
+    {
+      "feature": "sin_hour",
+      "label": "Hour (sin)",
+      "importance": 0.1929
+    },
+    {
+      "feature": "cos_hour",
+      "label": "Hour (cos)",
+      "importance": 0.1174
+    },
+    {
+      "feature": "temp",
+      "label": "Temperature",
+      "importance": 0.0783
+    },
+    {
+      "feature": "rush_hour",
+      "label": "Rush Hour Flag",
+      "importance": 0.0652
+    }
+  ],
+  "ops_guidance": [
+    {
+      "rank": 1,
+      "feature": "hr",
+      "label": "Hour of Day (Rush Hours)",
+      "insight": "Demand peaks sharply at 7-9 AM and 5-7 PM on working days, 4-6x higher than overnight. SHAP importance: 0.47.",
+      "action": "Pre-fill downtown docks before 7 AM. Run a reverse rebalance before 5 PM to empty them for returning riders."
+    },
+    {
+      "rank": 2,
+      "feature": "workingday",
+      "label": "Working Day vs. Weekend",
+      "insight": "Commute peaks disappear entirely on weekends; leisure demand spreads across 10 AM-6 PM instead. SHAP importance: 0.26.",
+      "action": "Maintain two schedules: commuter (Mon-Fri, focus on office/transit hubs) and leisure (Sat-Sun/holidays, focus on parks/waterfronts)."
+    },
+    {
+      "rank": 3,
+      "feature": "sin_hour",
+      "label": "Hour Cyclical Pattern (sin_hour)",
+      "insight": "The smooth cyclical hour encoding reveals demand rises steeply from 5 AM and fades from 7 PM. SHAP importance: 0.19.",
+      "action": "Set rebalancing dispatch triggers at 4:30 AM (before the steep rise) and start the evening wind-down sweep at 7 PM, not midnight."
+    }
+  ],
+  "shap_available": true,
+  "safety_buffer_note": "Highest model error occurs at 7\u20139 AM (rush hour). Maintain a 15\u201320% spare-dock buffer at high-traffic stations during these hours."
+}
