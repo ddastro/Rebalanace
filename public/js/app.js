@@ -143,8 +143,6 @@ async function init() {
     renderMetricsTable();
     renderForecastChart();
     renderErrorHourChart();
-    renderDrivers();
-    renderGroupedImportance();
     initWhatif();
     initScenarioB();
 

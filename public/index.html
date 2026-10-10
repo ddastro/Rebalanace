@@ -42,9 +42,6 @@
       <a href="#" id="nav-results" onclick="showTab('results');return false;">
         <span class="nav-icon">📈</span> Results
       </a>
-      <a href="#" id="nav-drivers" onclick="showTab('drivers');return false;">
-        <span class="nav-icon">🔍</span> Drivers
-      </a>
       <a href="#" id="nav-whatif" onclick="showTab('whatif');return false;">
         <span class="nav-icon">⚡</span> What-if
       </a>
@@ -169,7 +166,6 @@
       <div class="tabs">
         <button class="tab-btn active" id="tab-overview" onclick="showTab('overview')">Overview</button>
         <button class="tab-btn" id="tab-results"  onclick="showTab('results')">Results</button>
-        <button class="tab-btn" id="tab-drivers"  onclick="showTab('drivers')">Drivers</button>
         <button class="tab-btn" id="tab-whatif"   onclick="showTab('whatif')">What-if</button>
         <button class="tab-btn" id="tab-radar"    onclick="showTab('radar')">Risk Radar</button>
         <button class="tab-btn" id="tab-spatial"  onclick="showTab('spatial')">Spatial Radar</button>
@@ -329,29 +325,6 @@
           <div class="chart-wrap" style="height:260px">
             <canvas id="errorHourChart"></canvas>
           </div>
-        </div>
-      </section>
-
-      <!-- ── DRIVERS ────────────────────────────────────────── -->
-      <section class="tab-section" id="section-drivers">
-        <div class="section-header">
-          <h2>Demand Drivers</h2>
-          <p>Permutation importance identifies which features the model relies on most.</p>
-        </div>
-
-        <div class="card shap-img-wrap" style="margin-bottom:1rem">
-          <div class="card-title">Permutation importance summary</div>
-          <img id="shap-img" src="data/shap_summary.png" alt="Permutation Importance"
-               onerror="this.parentElement.innerHTML='<div style=\'padding:2rem;text-align:center;color:var(--fg-muted);font-size:0.82rem\'>Run the notebook to generate shap_summary.png</div>'" />
-        </div>
-
-        <div class="card" style="margin-bottom:1rem">
-          <div class="card-title">Feature group importance</div>
-          <div id="grouped-importance-container"><div class="loading"><div class="spinner"></div></div></div>
-        </div>
-
-        <div id="drivers-container">
-          <div class="loading"><div class="spinner"></div>Loading drivers…</div>
         </div>
       </section>
 
@@ -660,25 +633,6 @@
 
     <!-- ── FOOTER ──────────────────────────────────────────── -->
     <footer>
-      <div class="footer-title">Ethics &amp; Limitations</div>
-      <div class="ethics-grid">
-        <div class="ethics-item">
-          <h4>Unpredictable events</h4>
-          <p>Storms, transit strikes, concerts, and emergencies are outside the model's training distribution. Always maintain a manual override protocol.</p>
-        </div>
-        <div class="ethics-item">
-          <h4>Data freshness</h4>
-          <p>Training data is from 2011–2012. Remote work adoption, new infrastructure, and population shifts may have changed demand patterns. Retrain annually.</p>
-        </div>
-        <div class="ethics-item">
-          <h4>Uncertainty</h4>
-          <p>All predictions are estimates based on historical patterns. Safety buffers are heuristics — not confidence intervals. Rush hours carry the highest historical error.</p>
-        </div>
-        <div class="ethics-item">
-          <h4>Equity</h4>
-          <p>The model uses aggregate citywide counts without demographic weighting. Ensure rebalancing decisions do not systematically under-serve lower-income areas.</p>
-        </div>
-      </div>
       <div class="footer-copy">
         <span>RebalanceIQ · CityCycle Hackathon · Project 4 — Regression</span>
         <span>UCI Bike Sharing Dataset · Washington D.C. · 2011–2012</span>
